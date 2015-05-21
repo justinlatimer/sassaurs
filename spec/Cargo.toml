@@ -10,3 +10,8 @@ documentation = "https://github.com/justinlatimer/sassaurs"
 description = """
 Checks conformance against the sass spec.
 """
+
+[dependencies]
+docopt = "*"
+docopt_macros = "*"
+rustc-serialize = "*"
