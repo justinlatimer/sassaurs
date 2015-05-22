@@ -31,4 +31,16 @@ fn main() {
     let args: Args = Args::docopt()
         .decode()
         .unwrap_or_else(|e| e.exit());
+
+    let directory = match args.arg_spec_dir {
+        None => "sass-spec/spec",
+        Some(ref dir) => dir.as_ref()
+    };
+
+    if !args.flag_silent && !args.flag_tap {
+        println!("Recursively searching under directory '{}' \
+            for test files to test '{}' with.",
+            directory,
+            args.flag_command);
+    }
 }
