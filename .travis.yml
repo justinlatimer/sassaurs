@@ -1,0 +1,2 @@
+language: rust
+before_install: cd spec
