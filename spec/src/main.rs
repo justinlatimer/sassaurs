@@ -42,5 +42,29 @@ fn main() {
             for test files to test '{}' with.",
             directory,
             args.flag_command);
+        println!("{}", version(&args.flag_command));
+    }
+}
+
+fn version(command: &str) -> String {
+    let executable = command.split(' ').next().unwrap();
+    match exec(executable, &["-v"]) {
+        Some(output) => output,
+        None => match exec(executable, &["-V"]) {
+            Some(output) => output,
+            None => panic!("Could not get version of {}", executable)
+        }
+    }
+}
+
+fn exec(command: &str, args: &[&str]) -> Option<String> {
+    use std::process::Command;
+    let mut wrapper = Command::new(command);
+    match wrapper.args(args).output() {
+        Ok(output) => match output.status.success() {
+            true => Some(String::from_utf8(output.stdout).unwrap().to_string()),
+            _ => None
+        },
+        Err(e) => panic!("failed to execute process: '{:?}' error: '{}'", wrapper, e)
     }
 }
