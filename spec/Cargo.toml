@@ -15,3 +15,4 @@ Checks conformance against the sass spec.
 docopt = "*"
 docopt_macros = "*"
 rustc-serialize = "*"
+glob = "*"
