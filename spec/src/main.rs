@@ -56,6 +56,11 @@ fn main() {
     };
 
     let runnables = tests::load(path, &opts);
+
+    let runner = littletest::TestRunner::new(littletest::TestOptions {
+        parallelism: Some(4)
+    });
+    runner.run(&runnables);
 }
 
 fn version(command: &str) -> String {
