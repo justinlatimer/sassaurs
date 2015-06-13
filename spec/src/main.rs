@@ -3,6 +3,10 @@
 
 extern crate rustc_serialize;
 extern crate docopt;
+extern crate glob;
+extern crate littletest;
+
+mod tests;
 
 docopt!(pub Args derive Debug, "
 Usage: sassaurs_spec [options] [<spec-dir>]
@@ -44,6 +48,14 @@ fn main() {
             args.flag_command);
         println!("{}", version(&args.flag_command));
     }
+
+    let path = std::path::Path::new(directory);
+    let opts = tests::RunOptions {
+        ignore_todo: args.flag_ignore_todo,
+        command: args.flag_command
+    };
+
+    let runnables = tests::load(path, &opts);
 }
 
 fn version(command: &str) -> String {
