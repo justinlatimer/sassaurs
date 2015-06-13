@@ -23,6 +23,10 @@ impl<'o> TestCase<'o> {
 
 impl<'a> littletest::Runnable for TestCase<'a> {
     fn run(&self) -> littletest::TestResult {
+        if self.opts.ignore_todo && self.is_todo() {
+            return littletest::TestResult::Skipped
+        }
+
         littletest::TestResult::Pass
     }
 }
