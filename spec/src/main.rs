@@ -1,10 +1,12 @@
 #![feature(plugin)]
 #![plugin(docopt_macros)]
+#![plugin(regex_macros)]
 
 extern crate rustc_serialize;
 extern crate docopt;
 extern crate glob;
 extern crate littletest;
+extern crate regex;
 
 mod tests;
 
