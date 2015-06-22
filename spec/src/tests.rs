@@ -1,3 +1,4 @@
+use std::fs;
 use std::path;
 use littletest;
 
@@ -21,12 +22,53 @@ impl<'o> TestCase<'o> {
     }
 }
 
+fn clean_output(css: &str) -> String {
+    let despaced = regex!(r"\s+").replace_all(css, " ");
+    let destarred = regex!(r" *\{").replace_all(despaced.as_ref(), " {\n");
+    let newlined = regex!(r"([;,]) *").replace_all(destarred.as_ref(), "$1\n");
+    let destarred2 = regex!(r" *\} *").replace_all(newlined.as_ref(), " }\n");
+    let trim: &[_] = &[' ', '\t', '\n', '\r'];
+    destarred2.trim_matches(trim).to_string()
+}
+
 impl<'a> littletest::Runnable for TestCase<'a> {
     fn run(&self) -> littletest::TestResult {
         use littletest::{TestResult};
+        use std::process::Command;
+        use std::io::Read;
 
         if self.opts.ignore_todo && self.is_todo() {
             return TestResult::Skipped
+        }
+
+        let command_input: &str = self.opts.command.as_ref();
+        let mut parts = command_input.split(' ');
+        let command = parts.next().unwrap();
+        let mut rest: Vec<&str> = parts.collect();
+        rest.push(self.input_path.to_str().unwrap());
+
+        let mut wrapper = Command::new(command);
+        let result = match wrapper.args(rest.as_ref()).output() {
+            Ok(output) => match output.status.success() {
+                true => String::from_utf8(output.stdout).unwrap().to_string(),
+                _ => return TestResult::Fail
+            },
+            Err(_) => return TestResult::Fail
+        };
+        let output = clean_output(result.as_ref());
+
+        let expected_display = self.expected_path.display();
+        let mut expected_buffer = String::new();
+        let expected = match fs::File::open(&self.expected_path) {
+            Err(why) => panic!("couldn't open {}: {}", expected_display, why),
+            Ok(mut file) => match file.read_to_string(&mut expected_buffer) {
+                Err(why) => panic!("couldn't read {}: {}", expected_display, why),
+                Ok(_) => clean_output(expected_buffer.as_ref())
+            }
+        };
+
+        if output != expected {
+            return TestResult::Fail
         }
 
         TestResult::Pass
