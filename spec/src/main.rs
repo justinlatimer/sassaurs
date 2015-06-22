@@ -58,11 +58,15 @@ fn main() {
     };
 
     let runnables = tests::load(path, &opts);
+    let limited = match args.flag_limit {
+        Some(count) => runnables.into_iter().take(count).collect(),
+        _ => runnables
+    };
 
     let runner = littletest::TestRunner::new(littletest::TestOptions {
         parallelism: Some(4)
     });
-    runner.run(&runnables);
+    runner.run(&limited);
 }
 
 fn version(command: &str) -> String {
