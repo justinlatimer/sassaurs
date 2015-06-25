@@ -1,5 +1,5 @@
 [package]
-name = "sassaurs_spec"
+name = "sassaurs"
 version = "0.1.0"
 authors = ["Justin Latimer <justinlatimer@gmail.com>"]
 license = "MIT"
@@ -8,8 +8,16 @@ repository = "https://github.com/justinlatimer/sassaurs"
 homepage = "https://github.com/justinlatimer/sassaurs"
 documentation = "https://github.com/justinlatimer/sassaurs"
 description = """
-Checks conformance against the sass spec.
+Sass compiler
 """
+
+[lib]
+name = "sassaurs"
+path = "src/lib/lib.rs"
+
+[[bin]]
+name = "sassaurs_spec"
+path = "src/spec/bin.rs"
 
 [dependencies]
 docopt = "*"
