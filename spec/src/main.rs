@@ -8,6 +8,8 @@ extern crate glob;
 extern crate littletest;
 extern crate regex;
 
+mod adapter;
+use adapter::{Adapter,ExecutableAdapter};
 mod tests;
 
 docopt!(pub Args derive Debug, "
@@ -43,18 +45,20 @@ fn main() {
         Some(ref dir) => dir.as_ref()
     };
 
+    let engine = Box::new(ExecutableAdapter::new(&args.flag_command));
+
     if !args.flag_silent && !args.flag_tap {
         println!("Recursively searching under directory '{}' \
             for test files to test '{}' with.",
             directory,
             args.flag_command);
-        println!("{}", version(&args.flag_command));
+        println!("{}", engine.version());
     }
 
     let path = std::path::Path::new(directory);
     let opts = tests::RunOptions {
         ignore_todo: args.flag_ignore_todo,
-        command: args.flag_command
+        engine: engine as Box<Adapter>
     };
 
     let runnables = tests::load(path, &opts);
@@ -67,27 +71,4 @@ fn main() {
         parallelism: Some(4)
     });
     runner.run(&limited);
-}
-
-fn version(command: &str) -> String {
-    let executable = command.split(' ').next().unwrap();
-    match exec(executable, &["-v"]) {
-        Some(output) => output,
-        None => match exec(executable, &["-V"]) {
-            Some(output) => output,
-            None => panic!("Could not get version of {}", executable)
-        }
-    }
-}
-
-fn exec(command: &str, args: &[&str]) -> Option<String> {
-    use std::process::Command;
-    let mut wrapper = Command::new(command);
-    match wrapper.args(args).output() {
-        Ok(output) => match output.status.success() {
-            true => Some(String::from_utf8(output.stdout).unwrap().to_string()),
-            _ => None
-        },
-        Err(e) => panic!("failed to execute process: '{:?}' error: '{}'", wrapper, e)
-    }
 }

@@ -2,15 +2,17 @@ use std::fs;
 use std::path;
 use littletest;
 
-pub struct RunOptions {
+use adapter::{Adapter};
+
+pub struct RunOptions<'o> {
     pub ignore_todo: bool,
-    pub command: String
+    pub engine: Box<Adapter + 'o>
 }
 
 pub struct TestCase<'o> {
     pub input_path: path::PathBuf,
     pub expected_path: path::PathBuf,
-    pub opts: &'o RunOptions
+    pub opts: &'o RunOptions<'o>
 }
 
 impl<'o> TestCase<'o> {
@@ -34,28 +36,18 @@ fn clean_output(css: &str) -> String {
 impl<'a> littletest::Runnable for TestCase<'a> {
     fn run(&self) -> littletest::TestResult {
         use littletest::{TestResult};
-        use std::process::Command;
         use std::io::Read;
 
         if self.opts.ignore_todo && self.is_todo() {
             return TestResult::Skipped
         }
 
-        let command_input: &str = self.opts.command.as_ref();
-        let mut parts = command_input.split(' ');
-        let command = parts.next().unwrap();
-        let mut rest: Vec<&str> = parts.collect();
-        rest.push(self.input_path.to_str().unwrap());
+        let result = self.opts.engine.compile(&self.input_path);
 
-        let mut wrapper = Command::new(command);
-        let result = match wrapper.args(rest.as_ref()).output() {
-            Ok(output) => match output.status.success() {
-                true => String::from_utf8(output.stdout).unwrap().to_string(),
-                _ => return TestResult::Fail
-            },
-            Err(_) => return TestResult::Fail
-        };
-        let output = clean_output(result.as_ref());
+        if result.is_none() {
+            return TestResult::Fail
+        }
+        let output = clean_output(result.unwrap().as_ref());
 
         let expected_display = self.expected_path.display();
         let mut expected_buffer = String::new();
