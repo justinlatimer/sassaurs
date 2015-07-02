@@ -9,7 +9,7 @@ extern crate littletest;
 extern crate regex;
 
 mod adapter;
-use adapter::{Adapter,ExecutableAdapter};
+use adapter::{Adapter,ExecutableAdapter,SassaursAdapter};
 mod tests;
 
 docopt!(pub Args derive Debug, "
@@ -19,7 +19,6 @@ Usage: sassaurs_spec [options] [<spec-dir>]
 Options:
   -c COMMAND, --command COMMAND
                      Sets a specific binary to run
-                     [default: sassc]
   -s, --skip         Skip tests that fail to exit successfully.
   -t, --tap          Output TAP compatible report.
   -v, --verbose      Run verbosely.
@@ -31,6 +30,7 @@ Options:
   --unexpected-pass  When running the todo tests, flag as an error when a test
                      passes which is marked as todo.
 ",
+flag_command: Option<String>,
 flag_limit: Option<usize>,
 flag_filter: Option<String>,
 arg_spec_dir: Option<String>);
@@ -41,17 +41,20 @@ fn main() {
         .unwrap_or_else(|e| e.exit());
 
     let directory = match args.arg_spec_dir {
-        None => "spec",
+        None => "src/spec/sass-spec/spec",
         Some(ref dir) => dir.as_ref()
     };
 
-    let engine = Box::new(ExecutableAdapter::new(&args.flag_command));
+    let engine: Box<Adapter> = match args.flag_command {
+        Some(command) => Box::new(ExecutableAdapter::new(command)),
+        None => Box::new(SassaursAdapter),
+    };
 
     if !args.flag_silent && !args.flag_tap {
         println!("Recursively searching under directory '{}' \
             for test files to test '{}' with.",
             directory,
-            args.flag_command);
+            engine.description());
         println!("{}", engine.version());
     }
 

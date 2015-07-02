@@ -1,3 +1,4 @@
-#[test]
-fn it_works() {
+
+pub fn compile(sass: &str) -> Option<String> {
+    Some(sass.to_string())
 }

@@ -1,3 +1,5 @@
+extern crate sassaurs;
+
 use std::path;
 
 pub trait Adapter : Sync {
@@ -6,12 +8,12 @@ pub trait Adapter : Sync {
     fn compile(&self, input_path: &path::PathBuf) -> Option<String>;
 }
 
-pub struct ExecutableAdapter<'c> {
-    command: &'c str
+pub struct ExecutableAdapter {
+    command: String
 }
 
-impl<'c> ExecutableAdapter<'c> {
-    pub fn new(command: &'c str) -> ExecutableAdapter {
+impl<'c> ExecutableAdapter {
+    pub fn new(command: String) -> ExecutableAdapter {
         ExecutableAdapter {
             command: command
         }
@@ -30,9 +32,9 @@ fn exec(command: &str, args: &[&str]) -> Option<String> {
     }
 }
 
-impl<'c> Adapter for ExecutableAdapter<'c> {
+impl<'c> Adapter for ExecutableAdapter {
     fn description(&self) -> &str {
-        self.command
+        &self.command
     }
 
     fn version(&self) -> String {
@@ -54,5 +56,34 @@ impl<'c> Adapter for ExecutableAdapter<'c> {
         rest.push(input_path.to_str().unwrap());
 
         exec(command, rest.as_ref())
+    }
+}
+
+pub struct SassaursAdapter;
+
+impl Adapter for SassaursAdapter {
+    fn description(&self) -> &str {
+        "sassaurs"
+    }
+
+    fn version(&self) -> String {
+        "0.1.0".to_string()
+    }
+
+    fn compile(&self, input_path: &path::PathBuf) -> Option<String> {
+        use std::fs;
+        use std::io::Read;
+
+        let input_display = input_path.display();
+        let mut input_buffer = String::new();
+        let input = match fs::File::open(input_path) {
+            Err(why) => panic!("couldn't open {}: {}", input_display, why),
+            Ok(mut file) => match file.read_to_string(&mut input_buffer) {
+                Err(why) => panic!("couldn't read {}: {}", input_display, why),
+                Ok(_) => input_buffer.as_ref()
+            }
+        };
+
+        sassaurs::compile(input)
     }
 }
