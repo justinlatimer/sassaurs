@@ -41,7 +41,7 @@ fn main() {
         .unwrap_or_else(|e| e.exit());
 
     let directory = match args.arg_spec_dir {
-        None => "src/spec/sass-spec/spec",
+        None => "sass-spec/spec",
         Some(ref dir) => dir.as_ref()
     };
 
