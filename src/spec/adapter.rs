@@ -5,7 +5,7 @@ use std::path;
 pub trait Adapter : Sync {
     fn description(&self) -> &str;
     fn version(&self) -> String;
-    fn compile(&self, input_path: &path::PathBuf) -> Option<String>;
+    fn compile(&self, input_path: &path::PathBuf) -> Result<String, String>;
 }
 
 pub struct ExecutableAdapter {
@@ -20,15 +20,15 @@ impl<'c> ExecutableAdapter {
     }
 }
 
-fn exec(command: &str, args: &[&str]) -> Option<String> {
+fn exec(command: &str, args: &[&str]) -> Result<String, String> {
     use std::process::Command;
     let mut wrapper = Command::new(command);
     match wrapper.args(args).output() {
         Ok(output) => match output.status.success() {
-            true => Some(String::from_utf8(output.stdout).unwrap().to_string()),
-            _ => None
+            true => Ok(String::from_utf8(output.stdout).unwrap().to_string()),
+            _ => Err("process returned unsuccessful status".to_string())
         },
-        Err(e) => panic!("failed to execute process: '{:?}' error: '{}'", wrapper, e)
+        Err(e) => Err(format!("failed to execute process: '{:?}' error: '{}'", wrapper, e))
     }
 }
 
@@ -40,15 +40,15 @@ impl<'c> Adapter for ExecutableAdapter {
     fn version(&self) -> String {
         let executable = self.command.split(' ').next().unwrap();
         match exec(executable, &["-v"]) {
-            Some(output) => output,
-            None => match exec(executable, &["-V"]) {
-                Some(output) => output,
-                None => panic!("Could not get version of {}", executable)
+            Ok(output) => output,
+            Err(_) => match exec(executable, &["-V"]) {
+                Ok(output) => output,
+                Err(_) => panic!("Could not get version of {}", executable)
             }
         }
     }
 
-    fn compile(&self, input_path: &path::PathBuf) -> Option<String> {
+    fn compile(&self, input_path: &path::PathBuf) -> Result<String, String> {
         let command_input: &str = self.command.as_ref();
         let mut parts = command_input.split(' ');
         let command = parts.next().unwrap();
@@ -70,7 +70,7 @@ impl Adapter for SassaursAdapter {
         "0.1.0".to_string()
     }
 
-    fn compile(&self, input_path: &path::PathBuf) -> Option<String> {
+    fn compile(&self, input_path: &path::PathBuf) -> Result<String, String> {
         use std::fs;
         use std::io::Read;
 
@@ -84,6 +84,9 @@ impl Adapter for SassaursAdapter {
             }
         };
 
-        sassaurs::compile(input)
+        match sassaurs::compile(input) {
+            Ok(sass) => Ok(sass),
+            Err(error) => Err(error.into_owned())
+        }
     }
 }

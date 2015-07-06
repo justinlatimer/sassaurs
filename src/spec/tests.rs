@@ -44,7 +44,7 @@ impl<'a> littletest::Runnable for TestCase<'a> {
 
         let result = self.opts.engine.compile(&self.input_path);
 
-        if result.is_none() {
+        if result.is_err() {
             return TestResult::Fail
         }
         let output = clean_output(result.unwrap().as_ref());

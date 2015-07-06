@@ -1,4 +1,5 @@
+use std::borrow::Cow;
 
-pub fn compile(sass: &str) -> Option<String> {
-    Some(sass.to_string())
+pub fn compile<'a, S>(sass: S) -> Result<String, Cow<'a, str>> where S : Into<String> {
+    Ok(sass.into())
 }
